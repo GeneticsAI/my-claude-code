@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>时钟</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f1a;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+      z-index: 1;
+    }
+
+    /* Analog Clock */
+    .clock-wrapper {
+      position: relative;
+    }
+
+    .clock-face {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #1e1e2e, #16161f);
+      box-shadow:
+        0 0 0 2px rgba(99, 102, 241, 0.3),
+        0 0 40px rgba(99, 102, 241, 0.2),
+        inset 0 2px 4px rgba(255,255,255,0.05),
+        inset 0 -2px 4px rgba(0,0,0,0.4);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Hour markers */
+    .marker {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    .marker::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 14px;
+      background: rgba(99, 102, 241, 0.6);
+      border-radius: 2px;
+    }
+
+    .marker.minor::before {
+      width: 1.5px;
+      height: 8px;
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Center dot */
+    .center-dot {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #6366f1;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+      z-index: 10;
+    }
+
+    /* Hands */
+    .hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      border-radius: 4px;
+    }
+
+    .hour-hand {
+      width: 5px;
+      height: 80px;
+      margin-left: -2.5px;
+      background: linear-gradient(to top, #6366f1, #818cf8);
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+      border-radius: 4px 4px 2px 2px;
+    }
+
+    .minute-hand {
+      width: 3px;
+      height: 110px;
+      margin-left: -1.5px;
+      background: linear-gradient(to top, #a5b4fc, #c7d2fe);
+      box-shadow: 0 0 6px rgba(165, 180, 252, 0.5);
+      border-radius: 4px 4px 2px 2px;
+    }
+
+    .second-hand {
+      width: 1.5px;
+      height: 120px;
+      margin-left: -0.75px;
+      background: linear-gradient(to top, #f43f5e, #fb7185);
+      box-shadow: 0 0 6px rgba(244, 63, 94, 0.6);
+      border-radius: 4px 4px 1px 1px;
+    }
+
+    .second-hand::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1.5px;
+      height: 20px;
+      background: rgba(244, 63, 94, 0.5);
+      border-radius: 1px;
+    }
+
+    /* Digital display */
+    .digital {
+      text-align: center;
+    }
+
+    .digital-time {
+      font-size: 64px;
+      font-weight: 200;
+      letter-spacing: 4px;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+      line-height: 1;
+    }
+
+    .digital-time .colon {
+      animation: blink 1s step-end infinite;
+      color: rgba(99, 102, 241, 0.8);
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .digital-seconds {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+    }
+
+    .date-display {
+      margin-top: 16px;
+      font-size: 15px;
+      font-weight: 300;
+      letter-spacing: 3px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+    }
+
+    /* Mode toggle */
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(255,255,255,0.05);
+      padding: 4px;
+      border-radius: 12px;
+      margin-top: -20px;
+    }
+
+    .mode-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: rgba(255,255,255,0.4);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .mode-btn.active {
+      background: rgba(99, 102, 241, 0.3);
+      color: #fff;
+    }
+
+    .mode-btn:hover:not(.active) {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* Sections */
+    .section {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .section.visible {
+      display: flex;
+    }
+
+    /* Stopwatch */
+    .stopwatch-display {
+      font-size: 72px;
+      font-weight: 100;
+      letter-spacing: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stopwatch-ms {
+      font-size: 32px;
+      color: rgba(99, 102, 241, 0.8);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 16px;
+    }
+
+    .sw-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      background: rgba(99, 102, 241, 0.1);
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .sw-btn:hover {
+      background: rgba(99, 102, 241, 0.3);
+      border-color: rgba(99, 102, 241, 0.8);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .sw-btn.primary {
+      background: rgba(99, 102, 241, 0.3);
+      border-color: rgba(99, 102, 241, 0.8);
+      width: 90px;
+      height: 90px;
+      font-size: 14px;
+    }
+
+    .lap-list {
+      max-height: 150px;
+      overflow-y: auto;
+      width: 280px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+    }
+
+    .lap-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lap-item:first-child {
+      color: #a5b4fc;
+    }
+
+    /* Timer */
+    .timer-display {
+      font-size: 72px;
+      font-weight: 100;
+      letter-spacing: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-display.warning {
+      color: #fb7185;
+      text-shadow: 0 0 20px rgba(251, 113, 133, 0.4);
+    }
+
+    .timer-inputs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .timer-input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .timer-input {
+      width: 64px;
+      height: 48px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 22px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      outline: none;
+    }
+
+    .timer-input:focus {
+      border-color: rgba(99, 102, 241, 0.8);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .timer-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 1px;
+    }
+
+    .timer-sep {
+      font-size: 28px;
+      color: rgba(99, 102, 241, 0.6);
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <div class="container">
+    <div class="mode-tabs">
+      <button class="mode-btn active" onclick="switchMode('clock')">时钟</button>
+      <button class="mode-btn" onclick="switchMode('stopwatch')">秒表</button>
+      <button class="mode-btn" onclick="switchMode('timer')">计时器</button>
+    </div>
+
+    <!-- Clock -->
+    <div class="section visible" id="clock-section">
+      <div class="clock-wrapper">
+        <div class="clock-face" id="clock-face">
+          <div class="center-dot"></div>
+          <div class="hand hour-hand" id="hour-hand"></div>
+          <div class="hand minute-hand" id="minute-hand"></div>
+          <div class="hand second-hand" id="second-hand"></div>
+        </div>
+      </div>
+      <div class="digital">
+        <div class="digital-time" id="digital-time">
+          <span id="dh">00</span><span class="colon">:</span><span id="dm">00</span>
+        </div>
+        <div class="digital-seconds"><span id="ds">00</span></div>
+        <div class="date-display" id="date-display"></div>
+      </div>
+    </div>
+
+    <!-- Stopwatch -->
+    <div class="section" id="stopwatch-section">
+      <div class="stopwatch-display">
+        <span id="sw-h">00</span>:<span id="sw-m">00</span>:<span id="sw-s">00</span><span class="stopwatch-ms">.<span id="sw-ms">00</span></span>
+      </div>
+      <div class="btn-group">
+        <button class="sw-btn" onclick="swLap()" id="sw-lap-btn">计次</button>
+        <button class="sw-btn primary" onclick="swToggle()" id="sw-start-btn">开始</button>
+        <button class="sw-btn" onclick="swReset()">重置</button>
+      </div>
+      <div class="lap-list" id="lap-list"></div>
+    </div>
+
+    <!-- Timer -->
+    <div class="section" id="timer-section">
+      <div class="timer-display" id="timer-display">00:00:00</div>
+      <div class="timer-inputs" id="timer-inputs">
+        <div class="timer-input-group">
+          <input type="number" class="timer-input" id="t-h" min="0" max="23" value="0" placeholder="0">
+          <span class="timer-label">时</span>
+        </div>
+        <span class="timer-sep">:</span>
+        <div class="timer-input-group">
+          <input type="number" class="timer-input" id="t-m" min="0" max="59" value="5" placeholder="0">
+          <span class="timer-label">分</span>
+        </div>
+        <span class="timer-sep">:</span>
+        <div class="timer-input-group">
+          <input type="number" class="timer-input" id="t-s" min="0" max="59" value="0" placeholder="0">
+          <span class="timer-label">秒</span>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="sw-btn primary" onclick="timerToggle()" id="timer-start-btn">开始</button>
+        <button class="sw-btn" onclick="timerReset()">重置</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Clock face markers ───────────────────────────────────────────────────
+    const face = document.getElementById('clock-face');
+    for (let i = 0; i < 60; i++) {
+      const m = document.createElement('div');
+      m.className = 'marker' + (i % 5 !== 0 ? ' minor' : '');
+      m.style.transform = `rotate(${i * 6}deg)`;
+      face.appendChild(m);
+    }
+
+    // ─── Clock ────────────────────────────────────────────────────────────────
+    const weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    const months   = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+    function updateClock() {
+      const now = new Date();
+      const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+
+      const hDeg = (h % 12) * 30 + m * 0.5;
+      const mDeg = m * 6 + s * 0.1;
+      const sDeg = s * 6 + ms * 0.006;
+
+      document.getElementById('hour-hand').style.transform   = `rotate(${hDeg}deg)`;
+      document.getElementById('minute-hand').style.transform = `rotate(${mDeg}deg)`;
+      document.getElementById('second-hand').style.transform = `rotate(${sDeg}deg)`;
+
+      document.getElementById('dh').textContent = String(h).padStart(2,'0');
+      document.getElementById('dm').textContent = String(m).padStart(2,'0');
+      document.getElementById('ds').textContent = String(s).padStart(2,'0');
+
+      document.getElementById('date-display').textContent =
+        `${now.getFullYear()}年 ${months[now.getMonth()]} ${now.getDate()}日  ${weekdays[now.getDay()]}`;
+    }
+
+    setInterval(updateClock, 50);
+    updateClock();
+
+    // ─── Stopwatch ────────────────────────────────────────────────────────────
+    let swRunning = false, swStart = 0, swElapsed = 0, swTimer = null, laps = [];
+
+    function swToggle() {
+      if (swRunning) {
+        clearInterval(swTimer);
+        swElapsed += Date.now() - swStart;
+        swRunning = false;
+        document.getElementById('sw-start-btn').textContent = '继续';
+      } else {
+        swStart = Date.now();
+        swTimer = setInterval(swTick, 10);
+        swRunning = true;
+        document.getElementById('sw-start-btn').textContent = '暂停';
+      }
+    }
+
+    function swTick() {
+      const total = swElapsed + (Date.now() - swStart);
+      renderSw(total);
+    }
+
+    function renderSw(ms) {
+      const h  = Math.floor(ms / 3600000);
+      const m  = Math.floor((ms % 3600000) / 60000);
+      const s  = Math.floor((ms % 60000) / 1000);
+      const cs = Math.floor((ms % 1000) / 10);
+      document.getElementById('sw-h').textContent  = String(h).padStart(2,'0');
+      document.getElementById('sw-m').textContent  = String(m).padStart(2,'0');
+      document.getElementById('sw-s').textContent  = String(s).padStart(2,'0');
+      document.getElementById('sw-ms').textContent = String(cs).padStart(2,'0');
+    }
+
+    function swLap() {
+      if (!swRunning && swElapsed === 0) return;
+      const total = swElapsed + (swRunning ? Date.now() - swStart : 0);
+      laps.unshift(total);
+      renderLaps();
+    }
+
+    function renderLaps() {
+      const list = document.getElementById('lap-list');
+      list.innerHTML = laps.map((t, i) => {
+        const h  = Math.floor(t / 3600000);
+        const m  = Math.floor((t % 3600000) / 60000);
+        const s  = Math.floor((t % 60000) / 1000);
+        const cs = Math.floor((t % 1000) / 10);
+        const time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+        return `<div class="lap-item"><span>第 ${laps.length - i} 次</span><span>${time}</span></div>`;
+      }).join('');
+    }
+
+    function swReset() {
+      clearInterval(swTimer);
+      swRunning = false; swElapsed = 0; laps = [];
+      renderSw(0);
+      renderLaps();
+      document.getElementById('sw-start-btn').textContent = '开始';
+    }
+
+    // ─── Timer ────────────────────────────────────────────────────────────────
+    let timerRunning = false, timerRemain = 0, timerInterval = null;
+
+    function timerToggle() {
+      if (!timerRunning) {
+        if (timerRemain === 0) {
+          const h = parseInt(document.getElementById('t-h').value) || 0;
+          const m = parseInt(document.getElementById('t-m').value) || 0;
+          const s = parseInt(document.getElementById('t-s').value) || 0;
+          timerRemain = (h * 3600 + m * 60 + s) * 1000;
+          if (timerRemain === 0) return;
+        }
+        document.getElementById('timer-inputs').style.opacity = '0.3';
+        document.getElementById('timer-inputs').style.pointerEvents = 'none';
+        const end = Date.now() + timerRemain;
+        timerInterval = setInterval(() => {
+          timerRemain = Math.max(0, end - Date.now());
+          renderTimer();
+          if (timerRemain === 0) {
+            clearInterval(timerInterval);
+            timerRunning = false;
+            document.getElementById('timer-start-btn').textContent = '开始';
+            document.getElementById('timer-inputs').style.opacity = '1';
+            document.getElementById('timer-inputs').style.pointerEvents = '';
+            timerAlert();
+          }
+        }, 50);
+        timerRunning = true;
+        document.getElementById('timer-start-btn').textContent = '暂停';
+      } else {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('timer-start-btn').textContent = '继续';
+      }
+    }
+
+    function renderTimer() {
+      const h  = Math.floor(timerRemain / 3600000);
+      const m  = Math.floor((timerRemain % 3600000) / 60000);
+      const s  = Math.floor((timerRemain % 60000) / 1000);
+      const str = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      const el = document.getElementById('timer-display');
+      el.textContent = str;
+      el.className = 'timer-display' + (timerRemain > 0 && timerRemain <= 10000 ? ' warning' : '');
+    }
+
+    function timerReset() {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerRemain = 0;
+      document.getElementById('timer-display').textContent = '00:00:00';
+      document.getElementById('timer-display').className = 'timer-display';
+      document.getElementById('timer-start-btn').textContent = '开始';
+      document.getElementById('timer-inputs').style.opacity = '1';
+      document.getElementById('timer-inputs').style.pointerEvents = '';
+    }
+
+    function timerAlert() {
+      // Flash effect
+      let count = 0;
+      const flash = setInterval(() => {
+        document.getElementById('timer-display').style.opacity = count % 2 === 0 ? '0.2' : '1';
+        if (++count > 8) { clearInterval(flash); document.getElementById('timer-display').style.opacity = '1'; }
+      }, 250);
+      // Try audio beep
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 300, 600].forEach(delay => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.3, ctx.currentTime + delay/1000);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay/1000 + 0.4);
+          osc.start(ctx.currentTime + delay/1000);
+          osc.stop(ctx.currentTime + delay/1000 + 0.5);
+        });
+      } catch(e) {}
+    }
+
+    // ─── Mode switch ──────────────────────────────────────────────────────────
+    function switchMode(mode) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(mode + '-section').classList.add('visible');
+      event.target.classList.add('active');
+    }
+  </script>
+</body>
+</html>
