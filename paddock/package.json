@@ -1,0 +1,20 @@
+{
+  "name": "paddock",
+  "version": "0.1.0",
+  "private": true,
+  "description": "围场 Paddock — 跑车车友活动组织、实时位置共享、圈速遥测与对讲的社交应用",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "demo": "node --disable-warning=ExperimentalWarning scripts/demo.js",
+    "simulate": "node --disable-warning=ExperimentalWarning scripts/simulate.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "leaflet": "1.9.4",
+    "ws": "8.22.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "围场 Paddock",
+  "short_name": "围场",
+  "description": "跑车车友的活动组织、实时位置共享、圈速遥测与车队对讲",
+  "lang": "zh-CN",
+  "start_url": "/#/feed",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0b0d",
+  "theme_color": "#0a0b0d",
+  "categories": ["sports", "social", "navigation"],
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
