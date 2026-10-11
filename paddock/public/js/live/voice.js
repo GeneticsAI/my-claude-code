@@ -42,7 +42,7 @@ export class Voice {
     await this.unlock();
     if (this.node) return;
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error(window.isSecureContext ? '当前浏览器不支持麦克风' : '对讲需要 HTTPS 访问（或在本机 localhost 打开）');
+      throw new Error(window.isSecureContext ? '当前浏览器不支持麦克风' : '对讲说话需要用 https 开头的安全网址打开，现在仍可以收听别人的对讲');
     }
     if (!this.ctx.audioWorklet) throw new Error('当前浏览器不支持实时语音，请升级浏览器');
     this.stream = await navigator.mediaDevices.getUserMedia({

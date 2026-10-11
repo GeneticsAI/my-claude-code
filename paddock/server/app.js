@@ -2,6 +2,9 @@
 import http from 'node:http';
 import https from 'node:https';
 import { mkdirSync, readFileSync } from 'node:fs';
+import net from 'node:net';
+import { networkInterfaces } from 'node:os';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Router, HttpError, readJson, sendJson, serveStatic } from './http.js';
@@ -90,8 +93,10 @@ export function createApp({ dataDir, tls = null, log = true } = {}) {
     server,
     store,
     listen(port, host) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
+        server.once('error', reject);
         server.listen(port, host, () => {
+          server.off('error', reject);
           const addr = server.address();
           if (log) console.log(`🏁 围场 Paddock 已启动：${tls ? 'https' : 'http'}://${host === '0.0.0.0' ? 'localhost' : host}:${addr.port}`);
           resolve(addr.port);
@@ -106,4 +111,33 @@ export function createApp({ dataDir, tls = null, log = true } = {}) {
       }));
     },
   };
+}
+
+/** 本机的局域网 IPv4 地址（手机连同一个 Wi-Fi 时用它访问）。 */
+export function lanAddresses() {
+  const out = [];
+  for (const list of Object.values(networkInterfaces())) {
+    for (const n of list || []) if (n.family === 'IPv4' && !n.internal) out.push(n.address);
+  }
+  return out;
+}
+
+/** 端口是否空闲（避免重复启动时报一大串错误）。 */
+export function portFree(port) {
+  return new Promise((resolve) => {
+    const probe = net.createServer();
+    probe.once('error', () => resolve(false));
+    probe.listen(port, '0.0.0.0', () => probe.close(() => resolve(true)));
+  });
+}
+
+/** 用系统默认浏览器打开网址。 */
+export function openBrowser(url) {
+  const [cmd, args] =
+    process.platform === 'darwin' ? ['open', [url]] : process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]] : ['xdg-open', [url]];
+  try {
+    spawn(cmd, args, { stdio: 'ignore', detached: true }).on('error', () => {}).unref();
+  } catch {
+    /* 打不开就算了，用户可以手动输入网址 */
+  }
 }

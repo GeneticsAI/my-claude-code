@@ -1,10 +1,10 @@
-// 一键演示：npm run demo
+// 一键演示：npm run demo（加 --open 参数会自动打开浏览器，双击启动文件用的就是它）
 // 启动服务器（独立的 data-demo 目录，每次重建），写入演示车友 / 动态 / 活动 / 历史圈速，
 // 并让 6 位模拟车手在“演示赛道日”里实时跑圈、聊天。用 demo / paddock123 登录即可体验。
 import { rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createApp } from '../server/app.js';
+import { createApp, lanAddresses, openBrowser, portFree } from '../server/app.js';
 import { demoTrack, SimDriver } from '../public/js/shared/track.js';
 import { LapTimer, compactTrace } from '../public/js/shared/laptimer.js';
 import { Bot } from './bots.js';
@@ -12,6 +12,15 @@ import { Bot } from './bots.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = process.env.DATA_DIR || path.join(ROOT, 'data-demo');
 const port = Number(process.env.PORT || 3000);
+const autoOpen = process.argv.includes('--open');
+
+// 先确认端口空闲，再清空演示数据：重复双击时不会删掉正在运行的那一份
+if (!(await portFree(port))) {
+  console.log(`\n   端口 ${port} 已被占用 —— 演示版很可能已经在运行了。`);
+  console.log(`   直接在浏览器打开 http://localhost:${port} 即可；如果打不开，关掉其他黑色窗口后再试。\n`);
+  if (autoOpen) openBrowser(`http://localhost:${port}`);
+  process.exit(0);
+}
 rmSync(dataDir, { recursive: true, force: true });
 
 const app = createApp({ dataDir });
@@ -136,8 +145,21 @@ store.addMessage(live, drivers[0].id, '早！今天赛道温度不错，大家�
 store.addMessage(live, drivers[5].id, '收到，我先跟在后面学走线');
 
 await app.listen(port, '0.0.0.0');
-console.log('\n   演示账号：demo / paddock123（其他车友账号如 linyu、ajie 密码相同）');
-console.log(`   打开 http://localhost:${port} 登录后，在「活动」里进入「周六晨练 · 赛道日（演示）」→ 进入实况\n`);
+const line = '═'.repeat(52);
+console.log(`
+${line}
+  ✅ 围场 Paddock 演示版已启动（不要关闭这个窗口，关掉就停止了）
+
+  电脑浏览器打开：  http://localhost:${port}
+${lanAddresses().map((ip) => `  手机（连同一个 Wi-Fi）打开：http://${ip}:${port}`).join('\n')}
+
+  登录账号：demo    密码：paddock123
+  其他测试账号：linyu、ajie、kevin（密码都是 paddock123）
+
+  登录后：「活动」→「周六晨练 · 赛道日（演示）」→「进入实况」
+${line}
+`);
+if (autoOpen) openBrowser(`http://localhost:${port}`);
 
 const base = `http://127.0.0.1:${port}`;
 const bots = drivers.map((d, i) =>

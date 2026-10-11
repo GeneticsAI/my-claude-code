@@ -197,7 +197,7 @@ export async function eventFormView({ el, params }) {
 }
 
 export function geoErrorText(err) {
-  if (!window.isSecureContext) return '定位需要 HTTPS 访问（或在本机 localhost 打开）';
+  if (!window.isSecureContext) return '真实定位需要用 https 开头的安全网址打开，现在可以先用「模拟驾驶」体验';
   if (err?.code === 1) return '定位权限被拒绝，请在浏览器设置中允许';
   if (err?.code === 3) return '定位超时，请到开阔处重试';
   return '无法获取位置';

@@ -57,7 +57,7 @@ npm run demo
 3. 再开一个浏览器（或无痕窗口）用 `linyu / paddock123` 登录同一个活动，按住右下角按钮试试对讲
 4. 在活动详情页的排行榜点任意一行，进入圈速分析
 
-macOS 上也可以直接双击 `start-demo.command`。
+也可以直接双击启动：Mac 用 `start-mac.command`，Windows 用 `start-windows.bat`（会自动打开浏览器）。不熟悉命令行的话，请看 `START-HERE.txt`。
 
 演示数据放在 `data-demo/`，每次 `npm run demo` 都会重建。
 
